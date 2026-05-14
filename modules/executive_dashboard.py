@@ -1,113 +1,50 @@
 import streamlit as st
 import pandas as pd
-import plotly.express as px
-from io import BytesIO
-selected_client = st.session_state[
-    "selected_client"
-]
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer
-)
 
-from reportlab.lib.styles import getSampleStyleSheet
-from services.db_service import fetch_data
+from database.db import fetch_data
 
-# ---------------------------------------------------
+# =====================================================
 # PAGE HEADER
-# ---------------------------------------------------
+# =====================================================
 
-st.title(
-    f"Executive Dashboard - {selected_client}"
-)
+st.title("Executive Dashboard")
 
 st.markdown(
-    "AI-Powered ERP Transformation Command Center"
+    "Enterprise ERP Transformation "
+    "Command Center"
 )
-st.subheader("Client Transformation Summary")
 
-st.info(
-    f"""
-Client: {selected_client}
-
-Transformation Program:
-AI-Powered ERP Workflow Modernization
-
-Deployment Model:
-Multi-Tenant Enterprise SaaS
-
-Current Focus:
-Workflow automation, AI governance,
-testing acceleration, deployment readiness
-"""
-)
-# ---------------------------------------------------
-# FETCH DATA
-# ---------------------------------------------------
-
-raid_df = fetch_data(
-    f"""
-    SELECT * FROM raid_log
-    WHERE client_name = '{selected_client}'
-    """
-)
+# =====================================================
+# LOAD DATA
+# =====================================================
 
 project_df = fetch_data(
     "SELECT * FROM project_plan"
 )
 
 defect_df = fetch_data(
-    "SELECT * FROM defect_tracker"
+    "SELECT * FROM defects"
 )
 
-# ---------------------------------------------------
-# KPI CALCULATIONS
-# ---------------------------------------------------
-
-open_risks = 0
-
-if not raid_df.empty:
-
-    open_risks = len(
-        raid_df[
-            (raid_df["raid_type"] == "Risk") &
-            (raid_df["status"] != "Closed")
-        ]
-    )
-
-open_defects = 0
-
-if not defect_df.empty:
-
-    open_defects = len(
-        defect_df[
-            defect_df["defect_status"] != "Closed"
-        ]
-    )
-
-delayed_tasks = 0
-
-if not project_df.empty:
-
-    delayed_tasks = len(
-        project_df[
-            project_df["status"] == "Delayed"
-        ]
-    )
-
-go_live_readiness = max(
-    0,
-    100 - (
-        open_risks * 2 +
-        open_defects +
-        delayed_tasks * 3
-    )
+sit_df = fetch_data(
+    "SELECT * FROM sit_scripts"
 )
 
-# ---------------------------------------------------
-# KPI SECTION
-# ---------------------------------------------------
+uat_df = fetch_data(
+    "SELECT * FROM uat_scripts"
+)
+
+resource_df = fetch_data(
+    "SELECT * FROM resources"
+)
+
+cost_df = fetch_data(
+    "SELECT * FROM project_costs"
+)
+
+# =====================================================
+# EXECUTIVE KPIs
+# =====================================================
 
 st.subheader("Transformation KPIs")
 
@@ -115,12 +52,25 @@ k1, k2, k3, k4 = st.columns(4)
 
 with k1:
 
+    total_projects = (
+        len(project_df)
+        if not project_df.empty else 0
+    )
+
     st.metric(
-        "Open Risks",
-        open_risks
+        "Project Tasks",
+        total_projects
     )
 
 with k2:
+
+    open_defects = len(
+
+        defect_df[
+            defect_df["issue_status"] == "Open"
+        ]
+
+    ) if not defect_df.empty else 0
 
     st.metric(
         "Open Defects",
@@ -129,367 +79,188 @@ with k2:
 
 with k3:
 
+    sit_failed = len(
+
+        sit_df[
+            sit_df["testing_status"] == "Failed"
+        ]
+
+    ) if not sit_df.empty else 0
+
     st.metric(
-        "Delayed Tasks",
-        delayed_tasks
+        "SIT Failed",
+        sit_failed
     )
 
 with k4:
 
+    uat_failed = len(
+
+        uat_df[
+            uat_df["testing_status"] == "Failed"
+        ]
+
+    ) if not uat_df.empty else 0
+
     st.metric(
-        "Go-Live Readiness",
-        f"{go_live_readiness}%"
+        "UAT Failed",
+        uat_failed
     )
-# ---------------------------------------------------
-# VISUAL ANALYTICS
-# ---------------------------------------------------
 
-st.subheader("Transformation Analytics")
+# =====================================================
+# FINANCIAL KPIs
+# =====================================================
 
-c1, c2 = st.columns(2)
+st.subheader("Financial Health")
 
-# ---------------------------------------------------
-# DEFECT STATUS CHART
-# ---------------------------------------------------
+f1, f2, f3 = st.columns(3)
 
-with c1:
+with f1:
 
-    if not defect_df.empty:
+    total_budget = (
+        pd.to_numeric(
+            cost_df["budget_amount"],
+            errors="coerce"
+        ).sum()
+        if not cost_df.empty else 0
+    )
 
-        defect_chart = (
-            defect_df["defect_status"]
-            .value_counts()
-            .reset_index()
-        )
+    st.metric(
+        "Budget",
+        f"${total_budget:,.0f}"
+    )
 
-        defect_chart.columns = [
-            "Status",
-            "Count"
+with f2:
+
+    total_actual = (
+        pd.to_numeric(
+            cost_df["actual_amount"],
+            errors="coerce"
+        ).sum()
+        if not cost_df.empty else 0
+    )
+
+    st.metric(
+        "Actual",
+        f"${total_actual:,.0f}"
+    )
+
+with f3:
+
+    total_forecast = (
+        pd.to_numeric(
+            cost_df["forecast_amount"],
+            errors="coerce"
+        ).sum()
+        if not cost_df.empty else 0
+    )
+
+    st.metric(
+        "Forecast",
+        f"${total_forecast:,.0f}"
+    )
+
+# =====================================================
+# RESOURCE HEALTH
+# =====================================================
+
+st.subheader("Resource Health")
+
+r1, r2, r3 = st.columns(3)
+
+with r1:
+
+    total_resources = (
+        len(resource_df)
+        if not resource_df.empty else 0
+    )
+
+    st.metric(
+        "Resources",
+        total_resources
+    )
+
+with r2:
+
+    allocated = len(
+
+        resource_df[
+            resource_df["availability_status"]
+            == "Allocated"
         ]
 
-        fig = px.pie(
-            defect_chart,
-            names="Status",
-            values="Count",
-            title="Defect Status Distribution"
-        )
+    ) if not resource_df.empty else 0
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+    st.metric(
+        "Allocated",
+        allocated
+    )
 
-# ---------------------------------------------------
-# PROJECT STATUS CHART
-# ---------------------------------------------------
+with r3:
 
-with c2:
+    available = len(
 
-    if not project_df.empty:
-
-        project_chart = (
-            project_df["status"]
-            .value_counts()
-            .reset_index()
-        )
-
-        project_chart.columns = [
-            "Status",
-            "Count"
+        resource_df[
+            resource_df["availability_status"]
+            == "Available"
         ]
 
-        fig2 = px.bar(
-            project_chart,
-            x="Status",
-            y="Count",
-            title="Project Task Status"
-        )
+    ) if not resource_df.empty else 0
 
-        st.plotly_chart(
-            fig2,
-            use_container_width=True
-        )
-# ---------------------------------------------------
-# DELIVERY HEALTH
-# ---------------------------------------------------
-
-st.subheader("Delivery Health")
-
-if go_live_readiness >= 85:
-
-    st.success(
-        "Program delivery health is stable"
+    st.metric(
+        "Available",
+        available
     )
 
-elif go_live_readiness >= 70:
-
-    st.warning(
-        "Program risks require attention"
-    )
-
-else:
-
-    st.error(
-        "Program delivery risk is critical"
-    )
-
-# ---------------------------------------------------
+# =====================================================
 # AI INSIGHTS
-# ---------------------------------------------------
+# =====================================================
 
-st.subheader("AI Transformation Insights")
+st.subheader("AI Insights")
 
 if open_defects > 10:
 
     st.warning(
-        "High defect volume may impact SIT/UAT timelines"
+        "High defect volume detected"
     )
 
-if delayed_tasks > 5:
+if sit_failed > 5:
 
     st.error(
-        "Project delays detected across workstreams"
+        "SIT execution risk identified"
     )
 
-if open_risks > 3:
+if total_actual > total_budget:
+
+    st.error(
+        "Project exceeds approved budget"
+    )
+
+if available < 2:
 
     st.warning(
-        "Risk exposure increasing before deployment"
+        "Low resource availability"
     )
 
-if (
-    open_risks <= 3 and
-    open_defects <= 10 and
-    delayed_tasks <= 5
-):
+st.success(
+    "AI Transformation Governance "
+    "operational"
+)
 
-    st.success(
-        "Transformation program tracking within tolerance"
-    )
-
-# ---------------------------------------------------
-# DATA TABLES
-# ---------------------------------------------------
-
-st.subheader("Recent Risks")
-
-if not raid_df.empty:
-
-    st.dataframe(
-        raid_df.tail(5),
-        use_container_width=True
-    )
-
-st.subheader("Recent Defects")
-
-if not defect_df.empty:
-
-    st.dataframe(
-        defect_df.tail(5),
-        use_container_width=True
-    )
+# =====================================================
+# DATA REGISTERS
+# =====================================================
 
 st.subheader("Recent Project Tasks")
 
-if not project_df.empty:
+st.dataframe(
+    project_df.head(10),
+    use_container_width=True
+)
 
-    st.dataframe(
-        project_df.tail(5),
-        use_container_width=True
-    )
-    # ---------------------------------------------------
-# SAMPLE DATA
-# ---------------------------------------------------
+st.subheader("Recent Defects")
 
-project_df = pd.DataFrame({
-    "status": [
-        "Completed",
-        "In Progress",
-        "Delayed",
-        "Completed",
-        "In Progress"
-    ]
-})
-
-defect_df = pd.DataFrame({
-    "defect_status": [
-        "Open",
-        "Resolved",
-        "Closed",
-        "Open",
-        "Resolved",
-        "Open"
-    ]
-})
-
-# ---------------------------------------------------
-# VISUAL ANALYTICS
-# ---------------------------------------------------
-
-st.subheader("Transformation Analytics")
-
-c1, c2 = st.columns(2)
-
-# ---------------------------------------------------
-# DEFECT STATUS CHART
-# ---------------------------------------------------
-
-with c1:
-
-    defect_chart = (
-        defect_df["defect_status"]
-        .value_counts()
-        .reset_index()
-    )
-
-    defect_chart.columns = [
-        "Status",
-        "Count"
-    ]
-
-    fig = px.pie(
-        defect_chart,
-        names="Status",
-        values="Count",
-        title="Defect Status Distribution"
-    )
-
-    st.plotly_chart(
-        fig,
-        use_container_width=True
-    )
-
-# ---------------------------------------------------
-# PROJECT STATUS CHART
-# ---------------------------------------------------
-
-with c2:
-
-    project_chart = (
-        project_df["status"]
-        .value_counts()
-        .reset_index()
-    )
-
-    project_chart.columns = [
-        "Status",
-        "Count"
-    ]
-
-    fig2 = px.bar(
-        project_chart,
-        x="Status",
-        y="Count",
-        title="Project Task Status"
-    )
-
-    st.plotly_chart(
-        fig2,
-        use_container_width=True
-    )
-    # ---------------------------------------------------
-# PDF EXECUTIVE REPORT
-# ---------------------------------------------------
-
-st.subheader("Executive Report Export")
-
-if st.button(
-    "Generate Executive PDF Report"
-):
-
-    buffer = BytesIO()
-
-    doc = SimpleDocTemplate(buffer)
-
-    styles = getSampleStyleSheet()
-
-    elements = []
-
-    # ---------------------------------------------------
-    # TITLE
-    # ---------------------------------------------------
-
-    elements.append(
-        Paragraph(
-            "TransforaIQ Executive Dashboard Report",
-            styles["Title"]
-        )
-    )
-
-    elements.append(
-        Spacer(1, 12)
-    )
-
-    # ---------------------------------------------------
-    # KPI SUMMARY
-    # ---------------------------------------------------
-
-    elements.append(
-        Paragraph(
-            f"Open Risks: {open_risks}",
-            styles["BodyText"]
-        )
-    )
-
-    elements.append(
-        Paragraph(
-            f"Open Defects: {open_defects}",
-            styles["BodyText"]
-        )
-    )
-
-    elements.append(
-        Paragraph(
-            f"Delayed Tasks: {delayed_tasks}",
-            styles["BodyText"]
-        )
-    )
-
-    elements.append(
-        Paragraph(
-            f"Go-Live Readiness: {go_live_readiness}%",
-            styles["BodyText"]
-        )
-    )
-
-    elements.append(
-        Spacer(1, 20)
-    )
-
-    # ---------------------------------------------------
-    # AI SUMMARY
-    # ---------------------------------------------------
-
-    elements.append(
-        Paragraph(
-            "AI Transformation Summary",
-            styles["Heading2"]
-        )
-    )
-
-    elements.append(
-        Paragraph(
-            "Program delivery progressing with moderate risk exposure.",
-            styles["BodyText"]
-        )
-    )
-
-    elements.append(
-        Paragraph(
-            "Focus required on defect stabilization and deployment readiness.",
-            styles["BodyText"]
-        )
-    )
-
-    doc.build(elements)
-
-    pdf = buffer.getvalue()
-
-    buffer.close()
-
-    st.download_button(
-        label="Download Executive PDF",
-        data=pdf,
-        file_name="executive_dashboard_report.pdf",
-        mime="application/pdf"
-    )
+st.dataframe(
+    defect_df.head(10),
+    use_container_width=True
+)

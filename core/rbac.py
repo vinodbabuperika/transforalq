@@ -1,7 +1,10 @@
+# =========================================
+# TRANSFORAIQ RBAC ENGINE
+# =========================================
+
 ROLE_PERMISSIONS = {
 
     "Admin": [
-
         "Executive Dashboard",
         "Project Plan",
         "RAID Management",
@@ -32,56 +35,31 @@ ROLE_PERMISSIONS = {
         "ERP Discovery",
         "Gap Analysis",
         "AI Recommendations",
-        "FDD Generator",
+        "FDD Generator"
     ],
 
     "PMO": [
-
         "Executive Dashboard",
         "Project Plan",
         "RAID Management",
         "RACI Matrix",
         "Stakeholder Governance",
-        "Cost & Resource Tracking",
-        "Client Master",
-
-        "Statement of Work",
-        "Fit-Gap Analysis",
-
-        "SIT Planning & Execution",
-        "UAT Governance",
-        "Defect Tracking",
-
-        "Deployment Tracker",
-
-        "AI PMO Copilot",
-        "AI Risk Prediction",
 
         "ERP Discovery",
         "Gap Analysis",
-        "AI Recommendations",
-        "FDD Generator",
+        "AI Recommendations"
     ],
 
     "Testing Lead": [
-
         "SIT Planning & Execution",
         "UAT Governance",
         "Defect Tracking"
-    ],
-
-    "SI Partner": [
-
-        "Statement of Work",
-        "Fit-Gap Analysis",
-        "Configuration Tracking",
-        "Integration Tracking",
-        "Deployment Tracker",
-        "Cutover & Hypercare"
-    ],
-
-    "Business User": [
-
-        "UAT Governance"
     ]
 }
+
+
+def has_access(role, feature):
+
+    permissions = ROLE_PERMISSIONS.get(role, [])
+
+    return feature in permissions

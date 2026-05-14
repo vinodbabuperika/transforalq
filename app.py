@@ -1,4 +1,7 @@
 import streamlit as st
+from core.metadata_engine import *
+from core.rbac import has_access
+from core.navigation import NAVIGATION_STRUCTURE
 from services.rbac import ROLE_PERMISSIONS
 # ---------------------------------------------------
 # LOGIN SYSTEM
@@ -70,20 +73,12 @@ with st.sidebar:
     st.title("TransforaIQ")
 
     # ---------------------------------------------------
-    # GLOBAL CLIENT SELECTOR
+    # CLIENT SELECTOR
     # ---------------------------------------------------
-
-    client_list = [
-        "Client A",
-        "Client B",
-        "Client C",
-        "Client D",
-        "Client E"
-    ]
 
     selected_client = st.selectbox(
         "Select Client",
-        client_list
+        CLIENTS
     )
 
     st.session_state["selected_client"] = (
@@ -111,123 +106,45 @@ with st.sidebar:
 
     role = st.session_state["role"]
 
-    selected_page = None
-
     # ---------------------------------------------------
-    # GOVERNANCE DOMAIN
+    # DEFAULT PAGE
     # ---------------------------------------------------
 
-    if role in ["Admin", "PMO"]:
+    if "selected_page" not in st.session_state:
 
-        with st.expander(
-            "Governance Domain",
-            expanded=True
-        ):
-
-            if st.button("Executive Dashboard"):
-                selected_page = "Executive Dashboard"
-
-            if st.button("Project Plan"):
-                selected_page = "Project Plan"
-
-            if st.button("RAID Management"):
-                selected_page = "RAID Management"
-
-            if st.button("RACI Matrix"):
-                selected_page = "RACI Matrix"
-
-            if st.button("Stakeholder Governance"):
-                selected_page = "Stakeholder Governance"
-
-            if st.button("Cost & Resource Tracking"):
-                selected_page = "Cost & Resource Tracking"
-
-            if st.button("Client Master"):
-                selected_page = "Client Master"
+        st.session_state["selected_page"] = (
+            "Executive Dashboard"
+        )
 
     # ---------------------------------------------------
-    # DELIVERY DOMAIN
+    # DYNAMIC NAVIGATION ENGINE
     # ---------------------------------------------------
 
-    if role in ["Admin", "PMO", "SI Partner"]:
+    for domain, pages in NAVIGATION_STRUCTURE.items():
 
-        with st.expander("Delivery Domain"):
+        with st.expander(domain):
 
-            if st.button("Statement of Work"):
-                selected_page = "Statement of Work"
+            for page in pages:
 
-            if st.button("Fit-Gap Analysis"):
-                selected_page = "Fit-Gap Analysis"
+                if has_access(role, page):
 
-            if st.button("Configuration Tracking"):
-                selected_page = "Configuration Tracking"
+                    if st.button(
+                        page,
+                        key=f"nav_{page}"
+                    ):
 
-            if st.button("Integration Tracking"):
-                selected_page = "Integration Tracking"
+                        st.session_state[
+                            "selected_page"
+                        ] = page
 
-    # ---------------------------------------------------
-    # TESTING DOMAIN
-    # ---------------------------------------------------
+# ---------------------------------------------------
+# ACTIVE PAGE
+# ---------------------------------------------------
 
-    if role in ["Admin", "Testing Lead", "PMO"]:
+selected_page = st.session_state[
+    "selected_page"
+]
 
-        with st.expander("Testing Domain"):
-
-            if st.button("SIT Planning & Execution"):
-                selected_page = "SIT Planning & Execution"
-
-            if st.button("UAT Governance"):
-                selected_page = "UAT Governance"
-
-            if st.button("Defect Tracking"):
-                selected_page = "Defect Tracking"
-
-    # ---------------------------------------------------
-    # DEPLOYMENT DOMAIN
-    # ---------------------------------------------------
-
-    if role in ["Admin", "PMO", "SI Partner"]:
-
-        with st.expander("Deployment Domain"):
-
-            if st.button("Deployment Tracker"):
-                selected_page = "Deployment Tracker"
-
-            if st.button("Cutover & Hypercare"):
-                selected_page = "Cutover & Hypercare"
-
-    # ---------------------------------------------------
-    # MIGRATION DOMAIN
-    # ---------------------------------------------------
-
-    if role in ["Admin", "PMO", "SI Partner"]:
-
-        with st.expander("Migration Domain"):
-
-            if st.button("Migration Validation"):
-                selected_page = "Migration Validation"
-
-    # ---------------------------------------------------
-    # AI DOMAIN
-    # ---------------------------------------------------
-
-    if role in ["Admin", "PMO"]:
-
-        with st.expander(
-            "AI & Agentic Intelligence"
-        ):
-
-            if st.button("AI PMO Copilot"):
-                selected_page = "AI PMO Copilot"
-
-            if st.button("AI Risk Prediction"):
-                selected_page = "AI Risk Prediction"
-
-            if st.button("AI Mapping Assistant"):
-                selected_page = "AI Mapping Assistant"
-
-            if st.button("Agentic Workflow Automation"):
-                selected_page = "Agentic Workflow Automation"
 # ---------------------------------------------------
 # RBAC SECURITY
 # ---------------------------------------------------
@@ -239,9 +156,9 @@ if (
     selected_page not in allowed_pages
 ):
 
-    st.error(
-        "Access Denied: Insufficient permissions"
-    )
+    #st.error(
+        #"Access Denied: Insufficient permissions"
+    
 
     st.stop()
 
@@ -282,7 +199,29 @@ elif selected_page == "Stakeholder Governance":
     exec(open("modules/stakeholder_governance.py").read())
 
 elif selected_page == "Cost & Resource Tracking":
-    exec(open("modules/cost_resource_tracking.py").read())
+
+    tab1, tab2 = st.tabs(
+        [
+            "Resource Management",
+            "Cost Management"
+        ]
+    )
+
+    with tab1:
+
+        exec(
+            open(
+                "modules/resource_management.py"
+            ).read()
+        )
+
+    with tab2:
+
+        exec(
+            open(
+                "modules/cost_management.py"
+            ).read()
+        )
 
 elif selected_page == "Client Master":
     exec(open("modules/client_master.py").read())
@@ -311,9 +250,6 @@ elif selected_page == "Defect Tracking":
 elif selected_page == "Deployment Tracker":
     exec(open("modules/deployment_tracker.py").read())
 
-elif selected_page == "Cutover & Hypercare":
-    exec(open("modules/cutover_hypercare.py").read())
-
 elif selected_page == "Migration Validation":
     exec(open("modules/migration_validation.py").read())
 
@@ -328,4 +264,125 @@ elif selected_page == "AI Mapping Assistant":
 
 elif selected_page == "Agentic Workflow Automation":
     exec(open("modules/agentic_workflow_automation.py").read())
-    
+
+elif selected_page == "ERP Discovery":
+    exec(open("modules/erp_discovery.py").read())
+
+elif selected_page == "Gap Analysis":
+    exec(open("modules/gap_analysis.py").read())
+
+elif selected_page == "AI Recommendations":
+    exec(open("modules/ai_recommendations.py").read())
+
+elif selected_page == "FDD Generator":
+    exec(open("modules/fdd_generator.py").read())
+
+elif selected_page == "Client Master":
+
+    exec(
+        open(
+            "modules/client_master.py"
+        ).read()
+    )
+elif selected_page == "Stakeholder Governance":
+
+    exec(
+        open(
+            "modules/stakeholder_governance.py"
+        ).read()
+    )
+
+elif selected_page == "Project Plan":
+
+    exec(
+        open(
+            "modules/project_plan_engine.py"
+        ).read()
+    )        
+elif selected_page == "RAID Management":
+
+    exec(
+        open(
+            "modules/raid_management.py"
+        ).read()
+    )
+elif selected_page == "SIT Planning & Execution":
+
+    exec(
+        open(
+            "modules/sit_governance.py"
+        ).read()
+    )
+elif selected_page == "UAT Governance":
+
+    exec(
+        open(
+            "modules/uat_governance.py"
+        ).read()
+    )
+elif selected_page == "Cost & Resource Tracking":
+
+    exec(
+        open(
+            "modules/resource_management.py"
+        ).read()
+    )
+elif selected_page == "Executive Dashboard":
+
+    exec(
+        open(
+            "modules/executive_dashboard.py"
+        ).read()
+    )
+elif selected_page == "AI Risk Prediction":
+
+    exec(
+        open(
+            "modules/ai_risk_prediction.py"
+        ).read()
+    )
+elif selected_page == "AI PMO Copilot":
+
+    exec(
+        open(
+            "modules/ai_pmo_copilot.py"
+        ).read()
+    )
+elif selected_page == "Deployment Tracker":
+
+    exec(
+        open(
+            "modules/deployment_governance.py"
+        ).read()
+    )
+elif selected_page == "Cutover & Hypercare":
+
+    exec(
+        open(
+            "modules/hypercare_governance.py"
+        ).read()
+    )
+elif selected_page == "Cutover & Hypercare":
+
+    tab1, tab2 = st.tabs(
+        [
+            "Hypercare Governance",
+            "Go-Live Command Center"
+        ]
+    )
+
+    with tab1:
+
+        exec(
+            open(
+                "modules/hypercare_governance.py"
+            ).read()
+        )
+
+    with tab2:
+
+        exec(
+            open(
+                "modules/go_live_command_center.py"
+            ).read()
+        )                                

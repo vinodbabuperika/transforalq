@@ -1,175 +1,312 @@
 import streamlit as st
 import pandas as pd
 
-# ---------------------------------------------------
+from database.db import fetch_data
+
+# =====================================================
 # PAGE HEADER
-# ---------------------------------------------------
+# =====================================================
 
 st.title("AI PMO Copilot")
 
 st.markdown(
-    "AI-Powered Enterprise Transformation Intelligence & Executive Advisory"
+    "AI-powered ERP Transformation "
+    "Governance Assistant"
 )
 
-# ---------------------------------------------------
-# EXECUTIVE SUMMARY
-# ---------------------------------------------------
+# =====================================================
+# LOAD DATA
+# =====================================================
 
-st.subheader("AI Executive Summary")
-
-st.success("""
-Overall ERP transformation health remains stable.
-
-Key observations:
-• Finance SIT defects increased by 8%
-• UAT completion currently at 80%
-• Migration readiness improved to 88%
-• Deployment risks identified for Wave 1 cutover
-• Critical dependencies impacting SCM workstream
-""")
-
-# ---------------------------------------------------
-# AI RISK INSIGHTS
-# ---------------------------------------------------
-
-st.subheader("AI Risk Intelligence")
-
-risk_df = pd.DataFrame([
-    {
-        "Risk": "SIT Delay",
-        "Probability": "High",
-        "Impact": "High",
-        "Recommendation": "Increase testing resources"
-    },
-    {
-        "Risk": "Migration Failure",
-        "Probability": "Medium",
-        "Impact": "Critical",
-        "Recommendation": "Run reconciliation validation"
-    },
-    {
-        "Risk": "Deployment Rollback",
-        "Probability": "Low",
-        "Impact": "High",
-        "Recommendation": "Validate rollback scripts"
-    }
-])
-
-st.dataframe(
-    risk_df,
-    use_container_width=True
+project_df = fetch_data(
+    "SELECT * FROM project_plan"
 )
 
-# ---------------------------------------------------
-# GO-LIVE READINESS
-# ---------------------------------------------------
-
-st.subheader("AI Go-Live Readiness")
-
-st.progress(82)
-
-st.info(
-    "AI predicts go-live readiness currently at 82%"
+defect_df = fetch_data(
+    "SELECT * FROM defects"
 )
 
-# ---------------------------------------------------
-# AI RECOMMENDATIONS
-# ---------------------------------------------------
-
-st.subheader("AI Recommended Actions")
-
-st.warning(
-    "Prioritize closure of critical Finance SIT defects"
+sit_df = fetch_data(
+    "SELECT * FROM sit_scripts"
 )
 
-st.warning(
-    "Accelerate SCM UAT execution to avoid schedule slippage"
+uat_df = fetch_data(
+    "SELECT * FROM uat_scripts"
 )
 
-st.warning(
-    "Perform additional migration reconciliation before cutover"
+resource_df = fetch_data(
+    "SELECT * FROM resources"
 )
 
-# ---------------------------------------------------
-# EXECUTIVE Q&A
-# ---------------------------------------------------
+cost_df = fetch_data(
+    "SELECT * FROM project_costs"
+)
+
+# =====================================================
+# USER QUESTION
+# =====================================================
 
 st.subheader("Ask AI PMO Copilot")
 
 question = st.text_input(
-    "Ask a transformation question"
+    "Ask governance question"
 )
 
-if st.button("Generate AI Insight"):
+# =====================================================
+# AI RESPONSE ENGINE
+# =====================================================
 
-    if question:
+if question:
 
-        st.info(f"""
-AI Insight for:
-'{question}'
+    q = question.lower()
 
-Current transformation indicators suggest moderate deployment risk.
+    st.markdown("---")
 
-Recommended focus areas:
-• SIT stabilization
-• Migration reconciliation
-• UAT acceleration
-• Deployment sequencing validation
-""")
+    st.subheader("AI Response")
 
-# ---------------------------------------------------
-# AI TRANSFORMATION METRICS
-# ---------------------------------------------------
+    # -------------------------------------
+    # OPEN DEFECTS
+    # -------------------------------------
 
-st.subheader("AI Transformation Metrics")
+    if "open defect" in q:
 
-m1, m2, m3, m4 = st.columns(4)
+        open_defects = len(
 
-with m1:
-    st.metric("Transformation Health", "Green")
+            defect_df[
+                defect_df["issue_status"]
+                == "Open"
+            ]
 
-with m2:
-    st.metric("AI Risk Score", "72")
+        ) if not defect_df.empty else 0
 
-with m3:
-    st.metric("Go-Live Confidence", "82%")
+        st.write(
+            f"There are "
+            f"{open_defects} open defects."
+        )
 
-with m4:
-    st.metric("Delay Probability", "18%")
+    # -------------------------------------
+    # SIT FAILURES
+    # -------------------------------------
 
-# ---------------------------------------------------
-# AI TREND INSIGHTS
-# ---------------------------------------------------
+    elif "sit" in q and "fail" in q:
 
-st.subheader("AI Trend Analysis")
+        sit_failed = len(
 
-trend_df = pd.DataFrame([
-    {
-        "Area": "SIT Defects",
-        "Trend": "Increasing",
-        "Observation": "8% increase this week"
-    },
-    {
-        "Area": "UAT Execution",
-        "Trend": "Improving",
-        "Observation": "15% faster execution"
-    },
-    {
-        "Area": "Migration Accuracy",
-        "Trend": "Stable",
-        "Observation": "98.7% reconciliation accuracy"
-    }
-])
+            sit_df[
+                sit_df["testing_status"]
+                == "Failed"
+            ]
 
-st.dataframe(
-    trend_df,
-    use_container_width=True
-)
+        ) if not sit_df.empty else 0
 
-# ---------------------------------------------------
-# FOOTER
-# ---------------------------------------------------
+        st.write(
+            f"There are "
+            f"{sit_failed} SIT failures."
+        )
+
+    # -------------------------------------
+    # UAT FAILURES
+    # -------------------------------------
+
+    elif "uat" in q and "fail" in q:
+
+        uat_failed = len(
+
+            uat_df[
+                uat_df["testing_status"]
+                == "Failed"
+            ]
+
+        ) if not uat_df.empty else 0
+
+        st.write(
+            f"There are "
+            f"{uat_failed} UAT failures."
+        )
+
+    # -------------------------------------
+    # BUDGET STATUS
+    # -------------------------------------
+
+    elif "budget" in q:
+
+        if not cost_df.empty:
+
+            total_budget = pd.to_numeric(
+
+                cost_df["budget_amount"],
+                errors="coerce"
+
+            ).sum()
+
+            total_actual = pd.to_numeric(
+
+                cost_df["actual_amount"],
+                errors="coerce"
+
+            ).sum()
+
+            if total_actual > total_budget:
+
+                st.error(
+                    "Project exceeds approved budget"
+                )
+
+            else:
+
+                st.success(
+                    "Project budget healthy"
+                )
+
+            st.write(
+                f"Budget: ${total_budget:,.0f}"
+            )
+
+            st.write(
+                f"Actual: ${total_actual:,.0f}"
+            )
+
+    # -------------------------------------
+    # RESOURCE STATUS
+    # -------------------------------------
+
+    elif "resource" in q:
+
+        total_resources = (
+            len(resource_df)
+            if not resource_df.empty else 0
+        )
+
+        available_resources = len(
+
+            resource_df[
+                resource_df[
+                    "availability_status"
+                ] == "Available"
+            ]
+
+        ) if not resource_df.empty else 0
+
+        st.write(
+            f"Total resources: "
+            f"{total_resources}"
+        )
+
+        st.write(
+            f"Available resources: "
+            f"{available_resources}"
+        )
+
+    # -------------------------------------
+    # GO-LIVE READINESS
+    # -------------------------------------
+
+    elif "go live" in q or "readiness" in q:
+
+        open_defects = len(
+
+            defect_df[
+                defect_df["issue_status"]
+                == "Open"
+            ]
+
+        ) if not defect_df.empty else 0
+
+        sit_failed = len(
+
+            sit_df[
+                sit_df["testing_status"]
+                == "Failed"
+            ]
+
+        ) if not sit_df.empty else 0
+
+        readiness = max(
+            0,
+            100 - (
+                open_defects * 2
+                + sit_failed * 3
+            )
+        )
+
+        st.write(
+            f"Estimated Go-Live "
+            f"Readiness: {readiness}%"
+        )
+
+    # -------------------------------------
+    # DEFAULT RESPONSE
+    # -------------------------------------
+
+    else:
+
+        st.info(
+            "AI PMO Copilot could not "
+            "understand the request."
+        )
+
+        st.write(
+            "Try questions like:"
+        )
+
+        st.write(
+            "- Open defects"
+        )
+
+        st.write(
+            "- SIT failures"
+        )
+
+        st.write(
+            "- Budget status"
+        )
+
+        st.write(
+            "- Resource availability"
+        )
+
+        st.write(
+            "- Go live readiness"
+        )
+
+# =====================================================
+# QUICK GOVERNANCE INSIGHTS
+# =====================================================
+
+st.markdown("---")
+
+st.subheader("Quick AI Insights")
+
+open_defects = len(
+
+    defect_df[
+        defect_df["issue_status"]
+        == "Open"
+    ]
+
+) if not defect_df.empty else 0
+
+sit_failed = len(
+
+    sit_df[
+        sit_df["testing_status"]
+        == "Failed"
+    ]
+
+) if not sit_df.empty else 0
+
+if open_defects > 10:
+
+    st.warning(
+        "Critical defect backlog increasing"
+    )
+
+if sit_failed > 5:
+
+    st.error(
+        "SIT execution instability detected"
+    )
 
 st.success(
-    "AI PMO Copilot operational successfully"
+    "AI PMO Copilot operational"
 )

@@ -1,180 +1,130 @@
 import streamlit as st
 import pandas as pd
 
-from services.db_service import (
-    fetch_data,
-    execute_query
+from database.db import (
+    execute_query,
+    fetch_data
 )
 
-# ---------------------------------------------------
-# PAGE HEADER
-# ---------------------------------------------------
+# =========================================
+# PAGE TITLE
+# =========================================
 
 st.title("Client Master")
 
 st.markdown(
-    "Enterprise Multi-Tenant Client Governance"
+    "Enterprise client registry and "
+    "ERP transformation portfolio"
 )
 
-# ---------------------------------------------------
-# CLIENT DETAILS
-# ---------------------------------------------------
+# =========================================
+# ADD CLIENT
+# =========================================
 
-st.subheader("Create Client")
+st.subheader("Add New Client")
 
-c1, c2 = st.columns(2)
-
-with c1:
+with st.form("client_form"):
 
     client_name = st.text_input(
         "Client Name"
     )
 
-    erp_system = st.selectbox(
-        "ERP System",
+    industry = st.selectbox(
+
+        "Industry",
+
+        [
+            "Banking",
+            "Manufacturing",
+            "Retail",
+            "Healthcare",
+            "Telecom",
+            "Energy"
+        ]
+    )
+
+    region = st.selectbox(
+
+        "Region",
+
+        [
+            "North America",
+            "Europe",
+            "India",
+            "Middle East",
+            "APAC"
+        ]
+    )
+
+    erp_platform = st.selectbox(
+
+        "ERP Platform",
+
         [
             "SAP S/4HANA",
-            "SAP ECC",
             "Oracle Fusion",
-            "NetSuite",
-            "Dynamics 365"
-        ]
-    )
-
-    workflow = st.selectbox(
-        "Workflow",
-        [
-            "PTP",
-            "OTC",
-            "RTR"
-        ]
-    )
-
-    project_manager = st.text_input(
-        "Project Manager"
-    )
-
-with c2:
-
-    si_partner = st.selectbox(
-        "SI Partner",
-        [
-            "Genpact",
-            "Accenture",
-            "IBM",
-            "Infosys",
-            "TCS"
-        ]
-    )
-
-    deployment_type = st.selectbox(
-        "Deployment Type",
-        [
-            "Multi-Tenant",
-            "Dedicated"
+            "MS Dynamics",
+            "Workday",
+            "PeopleSoft"
         ]
     )
 
     status = st.selectbox(
-        "Program Status",
+
+        "Status",
+
         [
-            "Green",
-            "Amber",
-            "Red"
+            "Active",
+            "On Hold",
+            "Completed"
         ]
     )
 
-    go_live_readiness = st.slider(
-        "Go-Live Readiness %",
-        0,
-        100,
-        75
+    submitted = st.form_submit_button(
+        "Add Client"
     )
 
-# ---------------------------------------------------
-# SCOPE MANAGEMENT
-# ---------------------------------------------------
+    if submitted:
 
-st.subheader("In-Scope Capabilities")
+        execute_query(
 
-ocr_scope = st.checkbox("OCR")
+            """
 
-exception_scope = st.checkbox(
-    "Exception Concierge"
-)
+            INSERT INTO clients (
 
-approval_scope = st.checkbox(
-    "Approval Process"
-)
+                client_name,
+                industry,
+                region,
+                erp_platform,
+                status
 
-threeway_scope = st.checkbox(
-    "PO Three-Way Match"
-)
+            )
 
-twoway_scope = st.checkbox(
-    "PO Two-Way Match"
-)
+            VALUES (?, ?, ?, ?, ?)
 
-# ---------------------------------------------------
-# SAVE CLIENT
-# ---------------------------------------------------
+            """,
 
-if st.button(
-    "Save Client",
-    key="save_client"
-):
-
-    execute_query(
-        """
-        INSERT INTO client_master (
-
-            client_name,
-            erp_system,
-            workflow,
-            project_manager,
-            si_partner,
-            deployment_type,
-            status,
-            go_live_readiness,
-            ocr_scope,
-            exception_concierge_scope,
-            approval_process_scope,
-            po_threeway_match_scope,
-            po_twoway_match_scope
-
+            (
+                client_name,
+                industry,
+                region,
+                erp_platform,
+                status
+            )
         )
 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            client_name,
-            erp_system,
-            workflow,
-            project_manager,
-            si_partner,
-            deployment_type,
-            status,
-            go_live_readiness,
-            str(ocr_scope),
-            str(exception_scope),
-            str(approval_scope),
-            str(threeway_scope),
-            str(twoway_scope)
+        st.success(
+            "Client added successfully"
         )
-    )
 
-    st.success(
-        "Client created successfully"
-    )
-
-# ---------------------------------------------------
-# CLIENT REGISTER
-# ---------------------------------------------------
+# =========================================
+# CLIENT LIST
+# =========================================
 
 st.subheader("Client Portfolio")
 
 df = fetch_data(
-    "SELECT * FROM client_master"
+    "SELECT * FROM clients"
 )
 
 st.dataframe(

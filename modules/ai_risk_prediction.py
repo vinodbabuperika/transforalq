@@ -1,223 +1,411 @@
 import streamlit as st
 import pandas as pd
 
-# ---------------------------------------------------
+from database.db import fetch_data
+
+# =====================================================
 # PAGE HEADER
-# ---------------------------------------------------
+# =====================================================
 
 st.title("AI Risk Prediction")
 
 st.markdown(
-    "Predictive ERP Transformation Risk Intelligence & Forecasting"
+    "AI-powered Transformation "
+    "Risk Intelligence Engine"
 )
 
-# ---------------------------------------------------
-# FILTERS
-# ---------------------------------------------------
+# =====================================================
+# LOAD DATA
+# =====================================================
 
-f1, f2, f3 = st.columns(3)
+project_df = fetch_data(
+    "SELECT * FROM project_plan"
+)
 
-with f1:
-    workstream = st.selectbox(
-        "Workstream",
-        ["Finance", "SCM", "HCM"],
-        key="risk_workstream"
-    )
+defect_df = fetch_data(
+    "SELECT * FROM defects"
+)
 
-with f2:
-    phase = st.selectbox(
-        "Project Phase",
-        ["Design", "Build", "SIT", "UAT", "Deployment"],
-        key="risk_phase"
-    )
+sit_df = fetch_data(
+    "SELECT * FROM sit_scripts"
+)
 
-with f3:
-    risk_window = st.selectbox(
-        "Prediction Window",
-        ["7 Days", "14 Days", "30 Days"],
-        key="risk_window"
-    )
+uat_df = fetch_data(
+    "SELECT * FROM uat_scripts"
+)
 
-# ---------------------------------------------------
-# AI RISK SCORECARDS
-# ---------------------------------------------------
+resource_df = fetch_data(
+    "SELECT * FROM resources"
+)
 
-st.subheader("AI Risk Forecast")
+cost_df = fetch_data(
+    "SELECT * FROM project_costs"
+)
 
-k1, k2, k3, k4 = st.columns(4)
+# =====================================================
+# AI RISK CALCULATION
+# =====================================================
+
+risk_score = 0
+
+# -------------------------------------
+# OPEN DEFECT RISK
+# -------------------------------------
+
+open_defects = len(
+
+    defect_df[
+        defect_df["issue_status"] == "Open"
+    ]
+
+) if not defect_df.empty else 0
+
+if open_defects > 10:
+    risk_score += 25
+
+elif open_defects > 5:
+    risk_score += 15
+
+# -------------------------------------
+# SIT FAILURE RISK
+# -------------------------------------
+
+sit_failed = len(
+
+    sit_df[
+        sit_df["testing_status"] == "Failed"
+    ]
+
+) if not sit_df.empty else 0
+
+if sit_failed > 10:
+    risk_score += 25
+
+elif sit_failed > 5:
+    risk_score += 15
+
+# -------------------------------------
+# UAT FAILURE RISK
+# -------------------------------------
+
+uat_failed = len(
+
+    uat_df[
+        uat_df["testing_status"] == "Failed"
+    ]
+
+) if not uat_df.empty else 0
+
+if uat_failed > 5:
+    risk_score += 20
+
+elif uat_failed > 2:
+    risk_score += 10
+
+# -------------------------------------
+# RESOURCE RISK
+# -------------------------------------
+
+allocated_resources = len(
+
+    resource_df[
+        resource_df["availability_status"]
+        == "Allocated"
+    ]
+
+) if not resource_df.empty else 0
+
+available_resources = len(
+
+    resource_df[
+        resource_df["availability_status"]
+        == "Available"
+    ]
+
+) if not resource_df.empty else 0
+
+if available_resources < 2:
+    risk_score += 15
+
+# -------------------------------------
+# COST RISK
+# -------------------------------------
+
+if not cost_df.empty:
+
+    total_budget = pd.to_numeric(
+
+        cost_df["budget_amount"],
+        errors="coerce"
+
+    ).sum()
+
+    total_actual = pd.to_numeric(
+
+        cost_df["actual_amount"],
+        errors="coerce"
+
+    ).sum()
+
+    if total_actual > total_budget:
+        risk_score += 25
+
+# =====================================================
+# RISK LEVEL
+# =====================================================
+
+if risk_score >= 70:
+
+    risk_level = "HIGH"
+
+elif risk_score >= 40:
+
+    risk_level = "MEDIUM"
+
+else:
+
+    risk_level = "LOW"
+
+# =====================================================
+# EXECUTIVE RISK DASHBOARD
+# =====================================================
+
+st.subheader("Transformation Risk Score")
+
+k1, k2, k3 = st.columns(3)
 
 with k1:
-    st.metric("Overall Risk Score", "72")
+
+    st.metric(
+        "Risk Score",
+        f"{risk_score}%"
+    )
 
 with k2:
-    st.metric("Delay Probability", "18%")
+
+    st.metric(
+        "Risk Level",
+        risk_level
+    )
 
 with k3:
-    st.metric("Deployment Risk", "Medium")
 
-with k4:
-    st.metric("Go-Live Confidence", "82%")
+    go_live_readiness = max(
+        0,
+        100 - risk_score
+    )
 
-# ---------------------------------------------------
-# RISK PREDICTION TABLE
-# ---------------------------------------------------
+    st.metric(
+        "Go-Live Readiness",
+        f"{go_live_readiness}%"
+    )
 
-st.subheader("Predicted Transformation Risks")
+# =====================================================
+# AI GOVERNANCE INSIGHTS
+# =====================================================
 
-risk_df = pd.DataFrame([
-    {
-        "Risk Area": "Finance SIT",
-        "Probability": "High",
-        "Impact": "High",
-        "Prediction": "UAT entry delay likely",
-        "Recommended Action": "Increase SIT closure capacity"
-    },
-    {
-        "Risk Area": "Migration Validation",
-        "Probability": "Medium",
-        "Impact": "Critical",
-        "Prediction": "Reconciliation mismatches possible",
-        "Recommended Action": "Perform additional validation cycles"
-    },
-    {
-        "Risk Area": "Deployment Readiness",
-        "Probability": "Low",
-        "Impact": "High",
-        "Prediction": "Rollback dependency identified",
-        "Recommended Action": "Validate rollback sequencing"
-    }
-])
+st.subheader("AI Governance Insights")
 
-st.dataframe(
-    risk_df,
-    use_container_width=True
-)
+# -------------------------------------
+# DEFECT ALERTS
+# -------------------------------------
 
-# ---------------------------------------------------
-# AI HEATMAP INSIGHTS
-# ---------------------------------------------------
+if open_defects > 10:
+
+    st.error(
+        "Critical defect volume detected"
+    )
+
+elif open_defects > 5:
+
+    st.warning(
+        "Defect trend increasing"
+    )
+
+else:
+
+    st.success(
+        "Defect levels stable"
+    )
+
+# -------------------------------------
+# SIT ALERTS
+# -------------------------------------
+
+if sit_failed > 10:
+
+    st.error(
+        "SIT execution instability identified"
+    )
+
+elif sit_failed > 5:
+
+    st.warning(
+        "SIT failures increasing"
+    )
+
+else:
+
+    st.success(
+        "SIT execution stable"
+    )
+
+# -------------------------------------
+# UAT ALERTS
+# -------------------------------------
+
+if uat_failed > 5:
+
+    st.error(
+        "Business validation risk identified"
+    )
+
+elif uat_failed > 2:
+
+    st.warning(
+        "UAT issues require governance attention"
+    )
+
+else:
+
+    st.success(
+        "UAT execution healthy"
+    )
+
+# -------------------------------------
+# RESOURCE ALERTS
+# -------------------------------------
+
+if available_resources < 2:
+
+    st.warning(
+        "Critical resource bandwidth issue"
+    )
+
+else:
+
+    st.success(
+        "Resource availability healthy"
+    )
+
+# -------------------------------------
+# COST ALERTS
+# -------------------------------------
+
+if not cost_df.empty:
+
+    if total_actual > total_budget:
+
+        st.error(
+            "Project exceeds approved budget"
+        )
+
+    else:
+
+        st.success(
+            "Financial governance stable"
+        )
+
+# =====================================================
+# AI HEATMAP
+# =====================================================
 
 st.subheader("AI Risk Heatmap")
 
-heatmap_df = pd.DataFrame([
-    {
-        "Workstream": "Finance",
-        "Risk": "High",
-        "Trend": "Increasing"
-    },
-    {
-        "Workstream": "SCM",
-        "Risk": "Medium",
-        "Trend": "Stable"
-    },
-    {
-        "Workstream": "HCM",
-        "Risk": "Low",
-        "Trend": "Improving"
-    }
-])
+heatmap_data = pd.DataFrame({
+
+    "Governance Area": [
+
+        "Defects",
+        "SIT",
+        "UAT",
+        "Resources",
+        "Cost"
+
+    ],
+
+    "Risk Score": [
+
+        open_defects,
+        sit_failed,
+        uat_failed,
+        allocated_resources,
+        risk_score
+
+    ]
+})
 
 st.dataframe(
-    heatmap_df,
+    heatmap_data,
     use_container_width=True
 )
 
-# ---------------------------------------------------
-# AI RECOMMENDATIONS
-# ---------------------------------------------------
+# =====================================================
+# EXECUTIVE RECOMMENDATIONS
+# =====================================================
 
-st.subheader("AI Mitigation Recommendations")
+st.subheader("AI Recommendations")
 
-st.warning(
-    "Accelerate Finance SIT defect triage immediately"
-)
+if risk_level == "HIGH":
 
-st.warning(
-    "Increase migration reconciliation validation coverage"
-)
+    st.error(
+        "Immediate governance intervention required"
+    )
 
-st.info(
-    "Deployment readiness improving across Wave 1"
-)
+    st.write(
+        "- Launch executive war room"
+    )
 
-st.success(
-    "HCM workstream stabilization achieved"
-)
+    st.write(
+        "- Freeze non-critical CRs"
+    )
 
-# ---------------------------------------------------
-# EXECUTIVE FORECAST
-# ---------------------------------------------------
+    st.write(
+        "- Increase SIT/UAT governance"
+    )
 
-st.subheader("Executive Forecast Summary")
+    st.write(
+        "- Deploy additional SMEs"
+    )
 
-st.error("""
-AI forecast indicates moderate risk to deployment timelines.
+elif risk_level == "MEDIUM":
 
-Key prediction indicators:
-• SIT stabilization needed within 2 weeks
-• Migration reconciliation risk remains elevated
-• UAT completion improving steadily
-• Deployment readiness projected to reach 90%
-""")
+    st.warning(
+        "Controlled governance action recommended"
+    )
 
-# ---------------------------------------------------
-# AI PREDICTION QUERY
-# ---------------------------------------------------
+    st.write(
+        "- Increase testing reviews"
+    )
 
-st.subheader("Ask AI Risk Predictor")
+    st.write(
+        "- Track milestone slippage"
+    )
 
-question = st.text_input(
-    "Ask predictive risk question"
-)
+    st.write(
+        "- Monitor resource utilization"
+    )
 
-if st.button("Generate Prediction"):
+else:
 
-    if question:
+    st.success(
+        "Transformation governance healthy"
+    )
 
-        st.info(f"""
-AI Prediction for:
-'{question}'
+    st.write(
+        "- Continue current governance model"
+    )
 
-Forecast Summary:
-• Moderate delivery risk detected
-• SIT completion trending behind baseline
-• UAT execution improving gradually
-• Deployment stabilization achievable with mitigation actions
-""")
+    st.write(
+        "- Maintain delivery cadence"
+    )
 
-# ---------------------------------------------------
-# TREND ANALYTICS
-# ---------------------------------------------------
+# =====================================================
+# FINAL STATUS
+# =====================================================
 
-st.subheader("AI Trend Analytics")
-
-trend_df = pd.DataFrame([
-    {
-        "Area": "Defect Closure",
-        "Trend": "Improving",
-        "Observation": "12% improvement this week"
-    },
-    {
-        "Area": "Migration Accuracy",
-        "Trend": "Stable",
-        "Observation": "98.7% accuracy maintained"
-    },
-    {
-        "Area": "UAT Completion",
-        "Trend": "Increasing",
-        "Observation": "15% acceleration observed"
-    }
-])
-
-st.dataframe(
-    trend_df,
-    use_container_width=True
-)
-
-# ---------------------------------------------------
-# FOOTER
-# ---------------------------------------------------
+st.markdown("---")
 
 st.success(
-    "AI Risk Prediction Engine operational successfully"
+    "AI Risk Prediction Engine Operational"
 )

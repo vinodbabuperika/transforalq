@@ -1,200 +1,270 @@
 import streamlit as st
 import pandas as pd
+
 from datetime import date
 
-# ---------------------------------------------------
+from database.db import (
+    execute_query,
+    fetch_data
+)
+
+# =====================================================
 # PAGE HEADER
-# ---------------------------------------------------
+# =====================================================
 
 st.title("UAT Governance")
 
 st.markdown(
-    "Enterprise User Acceptance Testing Governance & Signoff Management"
+    "Enterprise User Acceptance "
+    "Testing Governance"
 )
 
-# ---------------------------------------------------
-# FILTERS
-# ---------------------------------------------------
+# =====================================================
+# UPLOAD UAT SCRIPTS
+# =====================================================
 
-f1, f2, f3, f4 = st.columns(4)
+st.subheader("Upload UAT Scripts")
 
-with f1:
-    cycle = st.selectbox(
-        "UAT Cycle",
-        ["Cycle 1", "Cycle 2", "Cycle 3"],
-        key="uat_cycle"
+uploaded_file = st.file_uploader(
+    "Upload UAT Script Excel",
+    type=["xlsx", "csv"]
+)
+
+if uploaded_file is not None:
+
+    try:
+
+        if uploaded_file.name.endswith(".csv"):
+
+            upload_df = pd.read_csv(
+                uploaded_file
+            )
+
+        else:
+
+            upload_df = pd.read_excel(
+                uploaded_file
+            )
+
+        st.success(
+            "UAT scripts uploaded successfully"
+        )
+
+        st.dataframe(
+            upload_df.head(),
+            use_container_width=True
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Upload Error: {e}"
+        )
+
+# =====================================================
+# MANUAL UAT ENTRY
+# =====================================================
+
+st.markdown("---")
+
+st.subheader("Create UAT Scenario")
+
+with st.form("uat_form"):
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+
+        scenario_id = st.text_input(
+            "Scenario ID"
+        )
+
+        scenario_type = st.text_input(
+            "Scenario Type"
+        )
+
+        execution_day = st.text_input(
+            "Execution Day"
+        )
+
+        master_data = st.text_input(
+            "Master Data"
+        )
+
+        entity_details = st.text_input(
+            "Entity Details"
+        )
+
+        test_scenario = st.text_area(
+            "Test Scenario"
+        )
+
+        test_steps = st.text_area(
+            "Test Steps"
+        )
+
+    with c2:
+
+        expected_outcome = st.text_area(
+            "Expected Outcome"
+        )
+
+        testing_status = st.selectbox(
+
+            "Testing Status",
+
+            [
+                "Not Started",
+                "Passed",
+                "Failed",
+                "Blocked"
+            ]
+        )
+
+        tester_name = st.text_input(
+            "Tester Name"
+        )
+
+        test_data = st.text_input(
+            "Test Data"
+        )
+
+        defect_id = st.text_input(
+            "Defect ID"
+        )
+
+        action_owner = st.text_input(
+            "Action Owner"
+        )
+
+    submitted = st.form_submit_button(
+        "Create UAT Scenario"
     )
 
-with f2:
-    workstream = st.selectbox(
-        "Workstream",
-        ["Finance", "SCM", "HCM"],
-        key="uat_workstream"
-    )
+    if submitted:
 
-with f3:
-    status = st.selectbox(
-        "Status",
-        ["All", "Open", "In Progress", "Completed"],
-        key="uat_status"
-    )
+        execute_query(
 
-with f4:
-    signoff = st.selectbox(
-        "Signoff Status",
-        ["Pending", "Approved", "Rejected"],
-        key="uat_signoff"
-    )
+            """
 
-# ---------------------------------------------------
-# KPI SECTION
-# ---------------------------------------------------
+            INSERT INTO uat_scripts (
 
-st.subheader("UAT KPIs")
+                scenario_id,
+                scenario_type,
+                execution_day,
+                master_data,
+                entity_details,
+                test_scenario,
+                test_steps,
+                expected_outcome,
+                testing_status,
+                tester_name,
+                executed_date,
+                test_data,
+                defect_id,
+                action_owner
 
-k1, k2, k3, k4, k5 = st.columns(5)
+            )
 
-with k1:
-    st.metric("Total Test Cases", "2,460")
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
-with k2:
-    st.metric("Executed", "1,980")
+            """,
 
-with k3:
-    st.metric("Passed", "1,742")
+            (
 
-with k4:
-    st.metric("Failed", "238")
+                scenario_id,
+                scenario_type,
+                execution_day,
+                master_data,
+                entity_details,
+                test_scenario,
+                test_steps,
+                expected_outcome,
+                testing_status,
+                tester_name,
+                str(date.today()),
+                test_data,
+                defect_id,
+                action_owner
 
-with k5:
-    st.metric("Completion", "80%")
+            )
+        )
 
-# ---------------------------------------------------
-# TEST EXECUTION TABLE
-# ---------------------------------------------------
+        st.success(
+            "UAT scenario created successfully"
+        )
 
-st.subheader("UAT Execution Tracker")
+# =====================================================
+# UAT REGISTER
+# =====================================================
 
-uat_df = pd.DataFrame([
-    {
-        "Test Case": "AP Invoice Processing",
-        "Workstream": "Finance",
-        "Status": "Passed",
-        "Executed By": "Business User",
-        "Cycle": "Cycle 1",
-        "Signoff": "Approved"
-    },
-    {
-        "Test Case": "PO Approval Workflow",
-        "Workstream": "SCM",
-        "Status": "Failed",
-        "Executed By": "SCM Lead",
-        "Cycle": "Cycle 1",
-        "Signoff": "Pending"
-    }
-])
+st.subheader("UAT Scenario Register")
+
+df = fetch_data(
+    "SELECT * FROM uat_scripts"
+)
 
 st.dataframe(
-    uat_df,
+    df,
     use_container_width=True
 )
 
-# ---------------------------------------------------
-# LOG TEST RESULT
-# ---------------------------------------------------
+# =====================================================
+# KPI DASHBOARD
+# =====================================================
 
-st.subheader("Log UAT Result")
+st.subheader("UAT KPIs")
 
-c1, c2 = st.columns(2)
+k1, k2, k3, k4 = st.columns(4)
 
-with c1:
+with k1:
 
-    test_case = st.text_input("Test Case")
-
-    cycle_name = st.selectbox(
-        "Cycle",
-        ["Cycle 1", "Cycle 2", "Cycle 3"],
-        key="form_cycle"
+    st.metric(
+        "Total Scenarios",
+        len(df)
     )
 
-    executed_by = st.text_input("Executed By")
+with k2:
 
-    workstream_name = st.selectbox(
-        "Workstream",
-        ["Finance", "SCM", "HCM"],
-        key="form_workstream"
+    passed = len(
+
+        df[
+            df["testing_status"] == "Passed"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "Passed",
+        passed
     )
 
-with c2:
+with k3:
 
-    execution_status = st.selectbox(
-        "Execution Status",
-        ["Passed", "Failed", "Blocked"],
-        key="form_execution_status"
+    failed = len(
+
+        df[
+            df["testing_status"] == "Failed"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "Failed",
+        failed
     )
 
-    execution_date = st.date_input(
-        "Execution Date",
-        date.today()
-    )
+with k4:
 
-    signoff_status = st.selectbox(
-        "Signoff Status",
-        ["Pending", "Approved", "Rejected"],
-        key="form_signoff_status"
-    )
+    blocked = len(
 
-comments = st.text_area("Business Comments")
+        df[
+            df["testing_status"] == "Blocked"
+        ]
 
-if st.button("Save UAT Result"):
+    ) if not df.empty else 0
 
-    st.success(
-        "UAT result saved successfully"
-    )
-
-# ---------------------------------------------------
-# AI INSIGHTS
-# ---------------------------------------------------
-
-st.subheader("AI UAT Insights")
-
-st.warning(
-    "Finance UAT completion trending below target"
-)
-
-st.error(
-    "Critical SCM defects may delay business signoff"
-)
-
-st.info(
-    "UAT execution velocity improved by 15%"
-)
-
-# ---------------------------------------------------
-# GO-LIVE READINESS
-# ---------------------------------------------------
-
-st.subheader("Go-Live Readiness")
-
-st.progress(78)
-
-st.info(
-    "Overall UAT readiness currently at 78%"
-)
-
-# ---------------------------------------------------
-# FILE UPLOADS
-# ---------------------------------------------------
-
-st.subheader("Upload UAT Evidence")
-
-uploaded_file = st.file_uploader(
-    "Upload Signoff / Evidence",
-    type=["xlsx", "csv", "pdf", "docx"]
-)
-
-if uploaded_file:
-
-    st.success(
-        "UAT evidence uploaded successfully"
+    st.metric(
+        "Blocked",
+        blocked
     )

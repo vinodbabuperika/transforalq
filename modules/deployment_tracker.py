@@ -1,202 +1,289 @@
 import streamlit as st
 import pandas as pd
+
 from datetime import date
 
-# ---------------------------------------------------
-# PAGE HEADER
-# ---------------------------------------------------
-
-st.title("Deployment Tracker")
-
-st.markdown(
-    "Enterprise Deployment Governance, Cutover & Go-Live Control Tower"
+from database.db import (
+    execute_query,
+    fetch_data
 )
 
-# ---------------------------------------------------
-# FILTERS
-# ---------------------------------------------------
+# =====================================================
+# PAGE HEADER
+# =====================================================
 
-f1, f2, f3, f4 = st.columns(4)
+st.title("Deployment Governance")
 
-with f1:
-    environment = st.selectbox(
-        "Environment",
-        ["SIT", "UAT", "Pre-Prod", "Production"],
-        key="deploy_environment"
+st.markdown(
+    "Enterprise Deployment & "
+    "Cutover Command Center"
+)
+
+# =====================================================
+# FILE UPLOAD
+# =====================================================
+
+st.subheader("Upload Deployment Plan")
+
+uploaded_file = st.file_uploader(
+    "Upload Deployment Excel",
+    type=["xlsx", "csv"]
+)
+
+if uploaded_file is not None:
+
+    try:
+
+        if uploaded_file.name.endswith(".csv"):
+
+            upload_df = pd.read_csv(
+                uploaded_file
+            )
+
+        else:
+
+            upload_df = pd.read_excel(
+                uploaded_file
+            )
+
+        st.success(
+            "Deployment plan uploaded successfully"
+        )
+
+        st.dataframe(
+            upload_df.head(),
+            use_container_width=True
+        )
+
+    except Exception as e:
+
+        st.error(
+            f"Upload Error: {e}"
+        )
+
+# =====================================================
+# MANUAL DEPLOYMENT ENTRY
+# =====================================================
+
+st.markdown("---")
+
+st.subheader("Create Deployment Activity")
+
+with st.form("deployment_form"):
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+
+        deployment_id = st.text_input(
+            "Deployment ID"
+        )
+
+        wave_name = st.text_input(
+            "Wave Name"
+        )
+
+        deployment_task = st.text_area(
+            "Deployment Task"
+        )
+
+        environment_name = st.text_input(
+            "Environment"
+        )
+
+        deployment_owner = st.text_input(
+            "Deployment Owner"
+        )
+
+        dependency = st.text_input(
+            "Dependency"
+        )
+
+    with c2:
+
+        deployment_status = st.selectbox(
+
+            "Deployment Status",
+
+            [
+                "Not Started",
+                "In Progress",
+                "Completed",
+                "Blocked"
+            ]
+        )
+
+        planned_start = st.date_input(
+            "Planned Start",
+            date.today()
+        )
+
+        planned_end = st.date_input(
+            "Planned End",
+            date.today()
+        )
+
+        rollback_plan = st.text_area(
+            "Rollback Plan"
+        )
+
+        remarks = st.text_area(
+            "Remarks"
+        )
+
+    submitted = st.form_submit_button(
+        "Create Deployment Task"
     )
 
-with f2:
-    deployment_wave = st.selectbox(
-        "Deployment Wave",
-        ["Wave 1", "Wave 2", "Wave 3"],
-        key="deploy_wave"
-    )
+    if submitted:
 
-with f3:
-    status = st.selectbox(
-        "Deployment Status",
-        ["All", "Open", "In Progress", "Completed", "Blocked"],
-        key="deploy_status"
-    )
+        execute_query(
 
-with f4:
-    readiness = st.selectbox(
-        "Go-Live Readiness",
-        ["Green", "Amber", "Red"],
-        key="deploy_readiness"
-    )
+            """
 
-# ---------------------------------------------------
-# KPI SECTION
-# ---------------------------------------------------
+            INSERT INTO deployment_tracker (
 
-st.subheader("Deployment KPIs")
+                deployment_id,
+                wave_name,
+                deployment_task,
+                environment_name,
+                deployment_owner,
+                planned_start,
+                planned_end,
+                deployment_status,
+                dependency,
+                rollback_plan,
+                remarks
 
-k1, k2, k3, k4, k5 = st.columns(5)
+            )
 
-with k1:
-    st.metric("Deployment Activities", "184")
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 
-with k2:
-    st.metric("Completed", "132")
+            """,
 
-with k3:
-    st.metric("Blocked", "11")
+            (
 
-with k4:
-    st.metric("Rollback Risks", "4")
+                deployment_id,
+                wave_name,
+                deployment_task,
+                environment_name,
+                deployment_owner,
+                str(planned_start),
+                str(planned_end),
+                deployment_status,
+                dependency,
+                rollback_plan,
+                remarks
 
-with k5:
-    st.metric("Readiness", "82%")
+            )
+        )
 
-# ---------------------------------------------------
-# DEPLOYMENT TABLE
-# ---------------------------------------------------
+        st.success(
+            "Deployment activity created"
+        )
 
-st.subheader("Deployment Activity Tracker")
+# =====================================================
+# DEPLOYMENT REGISTER
+# =====================================================
 
-deploy_df = pd.DataFrame([
-    {
-        "Activity": "Production Code Migration",
-        "Environment": "Production",
-        "Owner": "Release Manager",
-        "Status": "In Progress",
-        "Wave": "Wave 1",
-        "Readiness": "Amber"
-    },
-    {
-        "Activity": "Integration Validation",
-        "Environment": "Pre-Prod",
-        "Owner": "Integration Lead",
-        "Status": "Completed",
-        "Wave": "Wave 1",
-        "Readiness": "Green"
-    }
-])
+st.subheader("Deployment Register")
+
+df = fetch_data(
+    "SELECT * FROM deployment_tracker"
+)
 
 st.dataframe(
-    deploy_df,
+    df,
     use_container_width=True
 )
 
-# ---------------------------------------------------
-# CUTOVER TASK ENTRY
-# ---------------------------------------------------
+# =====================================================
+# KPI DASHBOARD
+# =====================================================
 
-st.subheader("Add Deployment Activity")
+st.subheader("Deployment KPIs")
 
-c1, c2 = st.columns(2)
+k1, k2, k3, k4 = st.columns(4)
 
-with c1:
+with k1:
 
-    activity = st.text_input("Deployment Activity")
-
-    env = st.selectbox(
-        "Target Environment",
-        ["SIT", "UAT", "Pre-Prod", "Production"],
-        key="form_env"
+    st.metric(
+        "Total Activities",
+        len(df)
     )
 
-    owner = st.text_input("Activity Owner")
+with k2:
 
-    wave = st.selectbox(
-        "Deployment Wave",
-        ["Wave 1", "Wave 2", "Wave 3"],
-        key="form_wave"
+    completed = len(
+
+        df[
+            df["deployment_status"]
+            == "Completed"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "Completed",
+        completed
     )
 
-with c2:
+with k3:
 
-    deploy_status = st.selectbox(
-        "Activity Status",
-        ["Open", "In Progress", "Completed", "Blocked"],
-        key="form_deploy_status"
+    inprogress = len(
+
+        df[
+            df["deployment_status"]
+            == "In Progress"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "In Progress",
+        inprogress
     )
 
-    deploy_date = st.date_input(
-        "Deployment Date",
-        date.today()
+with k4:
+
+    blocked = len(
+
+        df[
+            df["deployment_status"]
+            == "Blocked"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "Blocked",
+        blocked
     )
 
-    readiness_status = st.selectbox(
-        "Readiness Status",
-        ["Green", "Amber", "Red"],
-        key="form_readiness"
-    )
-
-rollback_plan = st.text_area("Rollback Plan")
-
-deployment_notes = st.text_area("Deployment Notes")
-
-if st.button("Save Deployment Activity"):
-
-    st.success(
-        "Deployment activity saved successfully"
-    )
-
-# ---------------------------------------------------
-# GO-LIVE READINESS
-# ---------------------------------------------------
-
-st.subheader("Go-Live Readiness Dashboard")
-
-st.progress(82)
-
-st.success(
-    "Overall deployment readiness at 82%"
-)
-
-# ---------------------------------------------------
-# AI INSIGHTS
-# ---------------------------------------------------
+# =====================================================
+# AI CUTOVER INSIGHTS
+# =====================================================
 
 st.subheader("AI Deployment Insights")
 
-st.warning(
-    "Integration validation delays may impact production cutover"
-)
+if blocked > 5:
 
-st.error(
-    "Rollback risk identified for Finance deployment sequence"
-)
+    st.error(
+        "Deployment execution risk detected"
+    )
 
-st.info(
-    "Deployment execution velocity improved across Wave 1"
-)
+elif blocked > 2:
 
-# ---------------------------------------------------
-# FILE UPLOADS
-# ---------------------------------------------------
+    st.warning(
+        "Deployment blockers increasing"
+    )
 
-st.subheader("Upload Deployment Evidence")
-
-uploaded_file = st.file_uploader(
-    "Upload Cutover Plan / Validation Evidence",
-    type=["xlsx", "csv", "pdf", "docx"]
-)
-
-if uploaded_file:
+else:
 
     st.success(
-        "Deployment evidence uploaded successfully"
+        "Deployment governance healthy"
     )
+
+st.success(
+    "Cutover governance operational"
+)

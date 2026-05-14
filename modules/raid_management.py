@@ -1,174 +1,229 @@
 import streamlit as st
 import pandas as pd
-selected_client = st.session_state[
-    "selected_client"
-]
-from io import BytesIO
-from datetime import date
-from services.db_service import fetch_data, execute_query
 
-# ---------------------------------------------------
-# PAGE HEADER
-# ---------------------------------------------------
+from datetime import date
+
+from database.db import (
+    execute_query,
+    fetch_data
+)
+
+# =========================================
+# PAGE TITLE
+# =========================================
 
 st.title("RAID Management")
 
-st.markdown("Enterprise Risk, Action, Issue & Dependency Tracking")
+st.markdown(
+    "Enterprise Risk, Assumption, "
+    "Issue & Dependency Governance"
+)
 
-# ---------------------------------------------------
-# RAID ENTRY FORM
-# ---------------------------------------------------
+# =========================================
+# CREATE RAID ITEM
+# =========================================
 
-st.subheader("Create RAID Entry")
+st.subheader("Create RAID Item")
 
-col1, col2 = st.columns(2)
+with st.form("raid_form"):
 
-with col1:
+    c1, c2 = st.columns(2)
 
-    title = st.text_input("Title")
+    with c1:
 
-    raid_date = st.date_input(
-        "RAID Date",
-        date.today()
-    )
+        raid_type = st.selectbox(
 
-    raised_by = st.text_input("Raised By")
+            "RAID Type",
 
-    raid_type = st.selectbox(
-        "RAID Type",
-        ["Risk", "Action", "Issue", "Dependency"]
-    )
-
-    priority = st.selectbox(
-        "Priority",
-        ["High", "Medium", "Low"]
-    )
-
-with col2:
-
-    status = st.selectbox(
-        "Status",
-        ["Open", "In Progress", "Closed"]
-    )
-
-    owner = st.text_input("Owner")
-
-    due_date = st.date_input(
-        "Due Date",
-        date.today()
-    )
-
-description = st.text_area("Description")
-
-mitigation_plan = st.text_area("Mitigation Plan")
-
-# ---------------------------------------------------
-# SAVE BUTTON
-# ---------------------------------------------------
-
-if st.button("Save RAID Entry"):
-
-    # Mandatory mitigation for Risk items
-
-    if raid_type == "Risk" and mitigation_plan.strip() == "":
-
-        st.error(
-            "Mitigation Plan is mandatory for Risk items"
+            [
+                "Risk",
+                "Assumption",
+                "Issue",
+                "Dependency"
+            ]
         )
 
-    else:
+        title = st.text_input(
+            "Title"
+        )
+
+        description = st.text_area(
+            "Description"
+        )
+
+        owner = st.text_input(
+            "Owner"
+        )
+
+    with c2:
+
+        status = st.selectbox(
+
+            "Status",
+
+            [
+                "Open",
+                "In Progress",
+                "Mitigated",
+                "Closed"
+            ]
+        )
+
+        priority = st.selectbox(
+
+            "Priority",
+
+            [
+                "Critical",
+                "High",
+                "Medium",
+                "Low"
+            ]
+        )
+
+        due_date = st.date_input(
+            "Due Date",
+            date.today()
+        )
+
+        mitigation_plan = st.text_area(
+            "Mitigation Plan"
+        )
+
+    submitted = st.form_submit_button(
+        "Create RAID Item"
+    )
+
+    if submitted:
 
         execute_query(
+
             """
+
             INSERT INTO raid_log (
 
-                client_name,
-                title,
-                raid_date,
-                raised_by,
                 raid_type,
-                priority,
-                status,
+                title,
+                description,
                 owner,
-                due_date,
-                mitigation_plan,
-                description
+                status,
+                due_date
+
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+            VALUES (?, ?, ?, ?, ?, ?)
+
             """,
+
             (
-                
-                selected_client,
-                title,
-                str(raid_date),
-                raised_by,
+
                 raid_type,
-                priority,
-                status,
+                title,
+                description,
                 owner,
-                str(due_date),
-                mitigation_plan,
-                description
+                status,
+                str(due_date)
+
             )
         )
 
-        st.success("RAID Entry Saved Successfully")
+        st.success(
+            "RAID item created successfully"
+        )
 
-# ---------------------------------------------------
+# =========================================
 # RAID TABLE
-# ---------------------------------------------------
+# =========================================
 
 st.subheader("RAID Register")
 
 df = fetch_data(
-    f"""
-SELECT * FROM raid_log
-WHERE client_name = '{selected_client}'
-"""
+    "SELECT * FROM raid_log"
 )
 
 st.dataframe(
     df,
     use_container_width=True
 )
-# ---------------------------------------------------
-# EXPORT TO EXCEL
-# ---------------------------------------------------
 
-st.subheader("Export RAID Report")
+# =========================================
+# KPI DASHBOARD
+# =========================================
 
-output = BytesIO()
+st.subheader("RAID KPIs")
 
-with pd.ExcelWriter(
-    output,
-    engine="openpyxl"
-) as writer:
+k1, k2, k3, k4 = st.columns(4)
 
-    df.to_excel(
-        writer,
-        index=False,
-        sheet_name="RAID Report"
+with k1:
+
+    st.metric(
+        "Total Items",
+        len(df)
     )
 
-excel_data = output.getvalue()
+with k2:
 
-st.download_button(
-    label="Download RAID Report",
-    data=excel_data,
-    file_name="raid_report.xlsx",
-    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    open_items = len(
+
+        df[
+            df["status"] == "Open"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "Open",
+        open_items
+    )
+
+with k3:
+
+    progress_items = len(
+
+        df[
+            df["status"] == "In Progress"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "In Progress",
+        progress_items
+    )
+
+with k4:
+
+    closed_items = len(
+
+        df[
+            df["status"] == "Closed"
+        ]
+
+    ) if not df.empty else 0
+
+    st.metric(
+        "Closed",
+        closed_items
+    )
+
+# =========================================
+# RAID SUMMARY
+# =========================================
+
+st.subheader("RAID Type Summary")
+
+summary = (
+
+    df.groupby("raid_type")
+    .size()
+    .reset_index(name="Count")
+
+    if not df.empty
+
+    else pd.DataFrame()
 )
-# ---------------------------------------------------
-# FILE UPLOAD SECTION
-# ---------------------------------------------------
 
-st.subheader("Upload Evidence")
-
-uploaded_file = st.file_uploader(
-    "Upload File",
-    type=["xlsx", "csv", "pdf", "docx"]
+st.dataframe(
+    summary,
+    use_container_width=True
 )
-
-if uploaded_file:
-
-    st.success("File uploaded successfully")
