@@ -253,7 +253,21 @@ if selected_page is None:
 # ---------------------------------------------------
 
 if selected_page == "Executive Dashboard":
-    exec(open("modules/executive_dashboard.py").read())
+
+    st.title("Executive Dashboard")
+
+    st.success("Executive dashboard cloud deployment in progress")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric("Go-Live Readiness", "82%")
+
+    with col2:
+        st.metric("Open Risks", "12")
+
+    with col3:
+        st.metric("Open Defects", "5")
 
 elif selected_page == "Project Plan":
     exec(open("modules/project_plan.py").read())
@@ -272,7 +286,7 @@ elif selected_page == "Cost & Resource Tracking":
 
 elif selected_page == "Client Master":
     exec(open("modules/client_master.py").read())
-    
+
 elif selected_page == "Statement of Work":
     exec(open("modules/statement_of_work.py").read())
 
