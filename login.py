@@ -17,52 +17,144 @@ st.set_page_config(
 st.markdown("""
 <style>
 
-.main {
-    background-color: #f5f7fb;
+[data-testid="stAppViewContainer"] {
+    background: linear-gradient(
+        135deg,
+        #f8fbff 0%,
+        #eef4ff 100%
+    );
 }
 
-.login-container {
+/* Remove Streamlit top spacing */
+.block-container {
+    padding-top: 2rem;
+    padding-bottom: 1rem;
+}
+
+/* Main Login Wrapper */
+.login-wrapper {
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-top: 60px;
+    padding-top: 30px;
 }
 
+/* Main Card */
 .login-card {
+    display: flex;
+    width: 1100px;
+    min-height: 700px;
     background: white;
-    padding: 50px;
-    border-radius: 18px;
-    box-shadow: 0px 8px 30px rgba(0,0,0,0.08);
-    width: 420px;
+    border-radius: 28px;
+    overflow: hidden;
+    box-shadow: 0px 10px 40px rgba(0,0,0,0.10);
 }
 
-.title {
-    font-size: 42px;
+/* Left Panel */
+.left-panel {
+    width: 48%;
+    background: linear-gradient(
+        180deg,
+        #021b47 0%,
+        #0b2c78 100%
+    );
+    color: white;
+    padding: 60px;
+}
+
+.logo {
+    font-size: 54px;
+    font-weight: 700;
+    margin-top: 60px;
+    line-height: 1.1;
+}
+
+.logo-blue {
+    color: #4da3ff;
+}
+
+.line {
+    width: 70px;
+    height: 4px;
+    background: #4da3ff;
+    margin-top: 25px;
+    margin-bottom: 35px;
+    border-radius: 10px;
+}
+
+.tagline {
+    font-size: 28px;
+    font-weight: 600;
+    margin-bottom: 25px;
+}
+
+.description {
+    font-size: 19px;
+    line-height: 1.8;
+    color: #dbeafe;
+}
+
+/* Right Panel */
+.right-panel {
+    width: 52%;
+    padding: 70px;
+    background: white;
+}
+
+.welcome {
+    font-size: 46px;
     font-weight: 700;
     color: #1e293b;
-    margin-bottom: 5px;
+    margin-top: 40px;
+    margin-bottom: 10px;
 }
 
-.subtitle {
-    font-size: 18px;
+.subtext {
     color: #64748b;
-    margin-bottom: 35px;
+    font-size: 20px;
+    margin-bottom: 45px;
 }
 
+/* Input fields */
+.stTextInput > div > div > input {
+    height: 58px;
+    border-radius: 14px;
+    border: 1px solid #dbe4f0;
+    font-size: 18px;
+}
+
+/* Login Button */
 .stButton > button {
     width: 100%;
-    background-color: #2563eb;
-    color: white;
-    border-radius: 10px;
-    height: 48px;
+    height: 58px;
+    border-radius: 14px;
     border: none;
-    font-size: 16px;
+    background: linear-gradient(
+        90deg,
+        #2563eb 0%,
+        #3b82f6 100%
+    );
+    color: white;
+    font-size: 20px;
     font-weight: 600;
+    margin-top: 20px;
 }
 
 .stButton > button:hover {
-    background-color: #1d4ed8;
     color: white;
+    background: linear-gradient(
+        90deg,
+        #1d4ed8 0%,
+        #2563eb 100%
+    );
+}
+
+/* Footer */
+.footer {
+    text-align: center;
+    margin-top: 25px;
+    color: #94a3b8;
+    font-size: 15px;
 }
 
 </style>
@@ -74,75 +166,112 @@ st.markdown("""
 
 def login_page():
 
-    col1, col2, col3 = st.columns([1,2,1])
+    st.markdown(
+        '<div class="login-wrapper">',
+        unsafe_allow_html=True
+    )
 
-    with col2:
+    st.markdown(
+        '<div class="login-card">',
+        unsafe_allow_html=True
+    )
 
-        st.markdown(
-            '<div class="login-container">',
-            unsafe_allow_html=True
-        )
+    # LEFT PANEL
+    st.markdown("""
+    <div class="left-panel">
 
-        st.markdown(
-            '<div class="login-card">',
-            unsafe_allow_html=True
-        )
+        <div class="logo">
+            TransforaQ<br>
+            <span class="logo-blue">
+                Enterprise
+            </span>
+        </div>
 
-        st.markdown(
-            '<div class="title">TransforaIQ Enterprise</div>',
-            unsafe_allow_html=True
-        )
+        <div class="line"></div>
 
-        st.markdown(
-            '<div class="subtitle">AI-Native ERP Governance Platform</div>',
-            unsafe_allow_html=True
-        )
+        <div class="tagline">
+            AI-Native ERP Governance Platform
+        </div>
 
-        username = st.text_input(
-            "Username"
-        )
+        <div class="description">
+            Transform your enterprise operations
+            with intelligent automation,
+            real-time insights,
+            and AI-powered governance.
+        </div>
 
-        password = st.text_input(
-            "Password",
-            type="password"
-        )
+    </div>
+    """, unsafe_allow_html=True)
 
-        if st.button("Login"):
+    # RIGHT PANEL
+    st.markdown(
+        '<div class="right-panel">',
+        unsafe_allow_html=True
+    )
 
-            # ==========================================
-            # TEMP DEMO LOGIN
-            # ==========================================
+    st.markdown(
+        '<div class="welcome">Welcome Back</div>',
+        unsafe_allow_html=True
+    )
 
-            if (
-                username == "admin"
-                and
-                password == "admin123"
-            ):
+    st.markdown(
+        '<div class="subtext">Please sign in to your account</div>',
+        unsafe_allow_html=True
+    )
 
-                st.session_state.logged_in = True
+    username = st.text_input(
+        "Username",
+        placeholder="Enter your username"
+    )
 
-                st.session_state.username = username
+    password = st.text_input(
+        "Password",
+        type="password",
+        placeholder="Enter your password"
+    )
 
-                st.session_state.role = "Admin"
+    if st.button("Login"):
 
-                st.success(
-                    "Login successful"
-                )
+        if (
+            username == "admin"
+            and
+            password == "admin123"
+        ):
 
-                st.rerun()
+            st.session_state.logged_in = True
 
-            else:
+            st.session_state.username = username
 
-                st.error(
-                    "Invalid credentials"
-                )
+            st.session_state.role = "Admin"
 
-        st.markdown(
-            '</div>',
-            unsafe_allow_html=True
-        )
+            st.success(
+                "Login successful"
+            )
 
-        st.markdown(
-            '</div>',
-            unsafe_allow_html=True
-        )
+            st.rerun()
+
+        else:
+
+            st.error(
+                "Invalid credentials"
+            )
+
+    st.markdown(
+        '<div class="footer">© 2026 TransforaIQ Enterprise. All rights reserved.</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
+
+    st.markdown(
+        '</div>',
+        unsafe_allow_html=True
+    )
