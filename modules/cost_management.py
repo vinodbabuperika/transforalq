@@ -1,22 +1,9 @@
 import streamlit as st
-import pandas as pd
-
-from datetime import date
-
-from database.db import (
-    execute_query,
-    fetch_data
-)
-
-# =====================================================
-# PAGE HEADER
-# =====================================================
 
 st.title("Cost Management")
 
-st.markdown(
-    "Enterprise Financial Governance "
-    "& Budget Tracking"
+st.success(
+    "Cost Management Module Loaded"
 )
 
 # =====================================================

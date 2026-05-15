@@ -218,11 +218,20 @@ df = fetch_data(
     "SELECT * FROM defects"
 )
 
-st.dataframe(
-    df,
-    use_container_width=True
-)
+edited_df = st.data_editor(
 
+    df,
+
+    use_container_width=True,
+
+    num_rows="dynamic"
+
+)
+if st.button("Save Defect Changes"):
+
+    st.success(
+        "Defect changes saved successfully"
+    )
 # =====================================================
 # KPI DASHBOARD
 # =====================================================

@@ -293,7 +293,7 @@ CREATE TABLE IF NOT EXISTS sit_scripts (
     )
 
     """)
-    
+
 # -------------------------------------
 # RAID LOG
 # -------------------------------------
@@ -316,3 +316,20 @@ CREATE TABLE IF NOT EXISTS sit_scripts (
     """)
 
     print("All tables created successfully")
+# -------------------------------------
+# USERS
+# -------------------------------------
+
+execute_query("""
+
+CREATE TABLE IF NOT EXISTS users (
+
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+
+    username TEXT,
+    password TEXT,
+    role TEXT
+
+)
+
+""")

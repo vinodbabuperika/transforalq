@@ -1,22 +1,8 @@
 import streamlit as st
-import pandas as pd
-
-from datetime import date
-
-from database.db import (
-    execute_query,
-    fetch_data
-)
-
-# =====================================================
-# PAGE HEADER
-# =====================================================
-
 st.title("Resource Management")
 
-st.markdown(
-    "Enterprise Resource Allocation "
-    "& Capacity Governance"
+st.success(
+    "Resource Management Module Loaded"
 )
 
 # =====================================================

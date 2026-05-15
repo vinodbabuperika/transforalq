@@ -186,10 +186,91 @@ df = fetch_data(
     "SELECT * FROM project_plan"
 )
 
-st.dataframe(
+edited_df = st.data_editor(
+
     df,
-    use_container_width=True
+
+    use_container_width=True,
+
+    num_rows="dynamic"
+
 )
+if st.button("Save Project Plan Changes"):
+
+    # ---------------------------------------------
+    # DELETE EXISTING DATA
+    # ---------------------------------------------
+
+    execute_query(
+
+        "DELETE FROM project_plan"
+
+    )
+
+    # ---------------------------------------------
+    # RELOAD UPDATED DATA
+    # ---------------------------------------------
+
+    for _, row in edited_df.iterrows():
+
+        execute_query(
+
+            """
+
+            INSERT INTO project_plan (
+
+                id,
+                client_name,
+                phase,
+                task_name,
+                deliverable,
+                owner,
+                status,
+                planned_start_date,
+                planned_end_date,
+                dependency,
+                remarks
+
+            )
+
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+
+            """,
+
+            (
+
+                int(row["id"])
+                if pd.notna(row["id"])
+                else None,
+
+                row["client_name"],
+
+                row["phase"],
+
+                row["task_name"],
+
+                row["deliverable"],
+
+                row["owner"],
+
+                row["status"],
+
+                row["planned_start_date"],
+
+                row["planned_end_date"],
+
+                row["dependency"],
+
+                row["remarks"]
+
+            )
+        )
+
+    st.success(
+        "Project plan updated successfully"
+    )
+
+    st.rerun()    
 # =====================================================
 # DELETE TASK
 # =====================================================

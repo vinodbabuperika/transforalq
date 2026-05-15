@@ -5,34 +5,21 @@ ROLE_PERMISSIONS = {
         "Executive Dashboard",
         "Project Plan",
         "RAID Management",
-        "RACI Matrix",
         "Stakeholder Governance",
-        "Cost & Resource Tracking",
+        "Cost Management",
+        "Resource Management",
         "Client Master",
-
-        "Statement of Work",
-        "Fit-Gap Analysis",
-        "Configuration Tracking",
-        "Integration Tracking",
-
         "SIT Planning & Execution",
         "UAT Governance",
         "Defect Tracking",
+        "AI ERP Delivery Accelerator",
+        "AS-IS Transformation Summary",
+        "TO-BE Process Summary",
+        "FDD Workspace",
+        "TDD Workspace",
+        "Configuration Workspace",
+        "Integration Workspace"
 
-        "Deployment Tracker",
-        "Cutover & Hypercare",
-
-        "Migration Validation",
-
-        "AI PMO Copilot",
-        "AI Risk Prediction",
-        "AI Mapping Assistant",
-        "Agentic Workflow Automation",
-
-        "ERP Discovery",
-        "Gap Analysis",
-        "AI Recommendations",
-        "FDD Generator",
     ],
 
     "PMO": [
@@ -40,48 +27,18 @@ ROLE_PERMISSIONS = {
         "Executive Dashboard",
         "Project Plan",
         "RAID Management",
-        "RACI Matrix",
         "Stakeholder Governance",
-        "Cost & Resource Tracking",
+        "Cost Management",
+        "Resource Management",
         "Client Master",
+        "AI ERP Delivery Accelerator",
+        "AS-IS Transformation Summary",
+        "TO-BE Process Summary",
+        "FDD Workspace",
+        "TDD Workspace",
+        "Configuration Workspace",
+        "Integration Workspace"
 
-        "Statement of Work",
-        "Fit-Gap Analysis",
-
-        "SIT Planning & Execution",
-        "UAT Governance",
-        "Defect Tracking",
-
-        "Deployment Tracker",
-
-        "AI PMO Copilot",
-        "AI Risk Prediction",
-
-        "ERP Discovery",
-        "Gap Analysis",
-        "AI Recommendations",
-        "FDD Generator",
-    ],
-
-    "Testing Lead": [
-
-        "SIT Planning & Execution",
-        "UAT Governance",
-        "Defect Tracking"
-    ],
-
-    "SI Partner": [
-
-        "Statement of Work",
-        "Fit-Gap Analysis",
-        "Configuration Tracking",
-        "Integration Tracking",
-        "Deployment Tracker",
-        "Cutover & Hypercare"
-    ],
-
-    "Business User": [
-
-        "UAT Governance"
     ]
+
 }
