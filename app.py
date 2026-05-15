@@ -1,10 +1,23 @@
 import streamlit as st
 
+# =====================================================
+# PAGE CONFIG MUST BE FIRST
+# =====================================================
+
+st.set_page_config(
+    page_title="TransforaIQ Enterprise",
+    layout="wide"
+)
+
 from initialize_db import initialize_database
 
 from authentication.login import login_page
 
 from navigation.sidebar import render_sidebar
+
+# =====================================================
+# INITIALIZE DATABASE
+# =====================================================
 
 initialize_database()
 
@@ -15,6 +28,16 @@ initialize_database()
 if "logged_in" not in st.session_state:
 
     st.session_state.logged_in = False
+
+if "role" not in st.session_state:
+
+    st.session_state.role = "Admin"
+
+if "selected_page" not in st.session_state:
+
+    st.session_state.selected_page = (
+        "Executive Dashboard"
+    )
 
 # =====================================================
 # LOGIN CONTROL
@@ -27,37 +50,17 @@ if not st.session_state.logged_in:
     st.stop()
 
 # =====================================================
-# DATABASE INITIALIZATION
-# =====================================================
-
-initialize_database()
-
-# =====================================================
-# PAGE CONFIG
-# =====================================================
-
-st.set_page_config(
-    page_title="TransforaIQ Enterprise",
-    layout="wide"
-)
-
-# =====================================================
-# SESSION STATE
-# =====================================================
-
-if "role" not in st.session_state:
-    st.session_state.role = "Admin"
-
-if "selected_page" not in st.session_state:
-    st.session_state.selected_page = "Executive Dashboard"
-
-# =====================================================
 # SIDEBAR
 # =====================================================
+
 selected_page = render_sidebar(
 
     st.session_state.role
 
+)
+
+st.session_state.selected_page = (
+    selected_page
 )
 
 # =====================================================
@@ -98,8 +101,6 @@ elif selected_page == "Stakeholder Governance":
 
 elif selected_page == "Cost Management":
 
-    st.title("Cost Management")
-
     exec(
         open(
             "modules/cost_management.py"
@@ -107,8 +108,6 @@ elif selected_page == "Cost Management":
     )
 
 elif selected_page == "Resource Management":
-
-    st.title("Resource Management")
 
     exec(
         open(
@@ -147,6 +146,7 @@ elif selected_page == "Defect Tracking":
             "modules/defect_tracking.py"
         ).read()
     )
+
 elif selected_page == "AI ERP Delivery Accelerator":
 
     exec(
@@ -154,56 +154,7 @@ elif selected_page == "AI ERP Delivery Accelerator":
             "modules/ai_delivery_accelerator.py"
         ).read()
     )
-        
-if selected_page:
-    st.session_state.selected_page = selected_page
 
-# =====================================================
-# PAGE ROUTING
-# =====================================================
-
-page = st.session_state.selected_page
-
-# -----------------------------------------------------
-# GOVERNANCE
-# -----------------------------------------------------
-
-if page == "Executive Dashboard":
-
-    exec(
-        open(
-            "modules/executive_dashboard.py"
-        ).read()
-    )
-
-elif page == "Project Plan":
-
-    exec(
-        open(
-            "modules/project_plan.py"
-        ).read()
-    )
-
-elif page == "RAID Management":
-    exec(
-        open(
-            "modules/raid_management.py"
-        ).read()
-    )
-elif selected_page == "AI Delivery Accelerator":
-
-    exec(
-        open(
-            "modules/ai_delivery_accelerator.py"
-        ).read()
-    )
-elif selected_page == "FDD Workspace":
-
-    exec(
-        open(
-            "modules/fdd_workspace.py"
-        ).read()
-    )
 elif selected_page == "AS-IS Transformation Summary":
 
     exec(
