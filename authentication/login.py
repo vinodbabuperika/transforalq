@@ -24,7 +24,7 @@ def login_page():
     if st.button("Login"):
 
         # ==========================================
-        # TEMP CLOUD LOGIN FOR DEMO
+        # TEMP DEMO LOGIN
         # ==========================================
 
         if (
@@ -35,9 +35,7 @@ def login_page():
 
             st.session_state.logged_in = True
 
-            st.session_state.username = (
-                username
-            )
+            st.session_state.username = username
 
             st.session_state.role = "Admin"
 
